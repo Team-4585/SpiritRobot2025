@@ -4,8 +4,15 @@ import frc.robot.huskylib.src.RoboDevice;
 
 
 import com.ctre.phoenix.motorcontrol.ControlMode.*;
-import com.revrobotics.*;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import org.opencv.core.Mat;
 
@@ -14,9 +21,9 @@ import org.opencv.core.Mat;
  */
 public class BasicPID extends RoboDevice{
   
-  private CANSparkMax m_motor;
+  private SparkMax m_motor;
   private RelativeEncoder m_encoder;
-  private SparkMaxPIDController m_pidController;
+  private SparkClosedLoopController m_pidController;
 
   public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput;
   public double rotations;
@@ -34,12 +41,9 @@ public class BasicPID extends RoboDevice{
     CANDeviceID = CANPort;
 
     //Setting up devices
-    m_motor = new CANSparkMax(CANPort, MotorType.kBrushless);
-    m_encoder = m_motor.getEncoder();
-    m_motor.restoreFactoryDefaults();
+    m_motor = new SparkMax(CANPort, MotorType.kBrushless);
 
-    m_pidController = m_motor.getPIDController();
-    m_pidController.setFeedbackDevice(m_encoder);
+    SparkMaxConfig config = new SparkMaxConfig();
 
     //Setting up PID values
     kP = 0.1;
@@ -49,14 +53,20 @@ public class BasicPID extends RoboDevice{
     kFF = 0;
     kMaxOutput = 0.5;
     kMinOutput = -0.5;
-    
-    
-    m_pidController.setP(kP);
-    m_pidController.setI(kI);
-    m_pidController.setD(kD);
-    m_pidController.setIZone(kIz);
-    m_pidController.setFF(kFF);
-    m_pidController.setOutputRange(kMinOutput, kMaxOutput);
+
+    config
+        .inverted(true)
+        .idleMode(IdleMode.kBrake);
+    config.encoder
+        .positionConversionFactor(1000)
+        .velocityConversionFactor(1000);
+    config.closedLoop
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+        .pid(kP, kI, kD);
+    // m_pidController.setIZone(kIz);
+    // m_pidController.setFF(kFF);
+    // m_pidController.setOutputRange(kMinOutput, kMaxOutput);
+    m_motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     
   }
 
@@ -75,7 +85,7 @@ public class BasicPID extends RoboDevice{
     
      
     //Magic line of code that gets it going!
-    m_pidController.setReference(rotations, CANSparkMax.ControlType.kPosition);
+    // m_pidController.setReference(rotations, SparkMax.ControlType.kPosition);
   }
 
   /**
@@ -101,7 +111,7 @@ public class BasicPID extends RoboDevice{
    * @param kP the proportional tune
    */
   public void setPValue(double kP){ 
-    m_pidController.setP(kP);
+    // m_pidController.setP(kP);
   }
 
   /**
@@ -109,7 +119,7 @@ public class BasicPID extends RoboDevice{
    * @param kI the integral tune
    */
   public void setIValue(double kI){ 
-    m_pidController.setI(kI);
+    // m_pidController.setI(kI);
   }
 
   /**
@@ -117,7 +127,7 @@ public class BasicPID extends RoboDevice{
    * @param kD the derivative tune
    */
   public void setDValue(double kD){
-    m_pidController.setD(kD);
+    // m_pidController.setD(kD);
   }
 
   /**
@@ -125,7 +135,7 @@ public class BasicPID extends RoboDevice{
    * @param kIz - I don't know - Will W.
    */
   public void setIZValue(double kIz){ 
-    m_pidController.setIZone(kIz);
+    // m_pidController.setIZone(kIz);
   }
     
   /**
@@ -133,7 +143,7 @@ public class BasicPID extends RoboDevice{
    * @param kFF - I don't know - Will W.
    */
   public void setFFValue(double kFF){ 
-    m_pidController.setFF(kFF); 
+    // m_pidController.setFF(kFF); 
   }
   
   /**
@@ -143,8 +153,8 @@ public class BasicPID extends RoboDevice{
    * @param max the maximum rotational value of the motor
    */
   public void setOutputRangeValues(double min, double max){ 
-    m_pidController.setOutputRange(min, max); 
-    kMinOutput = min; kMaxOutput = max;
+    // m_pidController.setOutputRange(min, max); 
+    // kMinOutput = min; kMaxOutput = max;
   }
 
   /**
@@ -154,6 +164,6 @@ public class BasicPID extends RoboDevice{
    * @param slaveMotor the motor that will follow this motor
    */
   public void setSlave(BasicPID slaveMotor){
-    slaveMotor.m_motor.follow(m_motor, true);
+    // slaveMotor.m_motor.follow(m_motor, true);
   }
 }
